@@ -1,0 +1,20 @@
+server:
+  port: 9000
+
+spring:
+  application:
+    name: identity-server
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/${DB_NAME:identity_server}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: ${DB_USER:identity_app}
+    password: ${DB_PASSWORD:changeme}
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
