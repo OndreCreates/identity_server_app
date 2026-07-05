@@ -38,6 +38,7 @@ bin/
 
 ### AI tooling (local instructions, not for public repo) ###
 CLAUDE.md
+AGENTS.md
 .claude/
 .cursor/
 .windsurf/
