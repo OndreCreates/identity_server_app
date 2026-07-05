@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="cs" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${isNew} ? 'Nový klient – Admin' : 'Upravit klienta – Admin'"></title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+    <div class="admin-topbar">
+        <span class="brand">OndreCreates · Identity Server · Admin</span>
+        <form th:action="@{/logout}" method="post" class="logout-form">
+            <button type="submit" class="button-secondary">Odhlásit se</button>
+        </form>
+    </div>
+
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1 th:text="${isNew} ? 'Nový klient' : 'Upravit klienta'"></h1>
+        </div>
+
+        <div class="panel form-panel">
+            <form th:action="${isNew} ? @{/admin/clients} : @{/admin/clients/{id}(id=${form.clientId})}"
+                  th:object="${form}" method="post">
+
+                <div class="error" th:if="${error}" th:text="${error}"></div>
+
+                <label for="clientId">Client ID</label>
+                <input type="text" id="clientId" th:field="*{clientId}" th:readonly="${!isNew}" required>
+
+                <div class="checkbox-row">
+                    <input type="checkbox" id="confidential" th:field="*{confidential}">
+                    <label for="confidential">Confidential (má client secret)</label>
+                </div>
+
+                <label for="secret">Client secret</label>
+                <input type="text" id="secret" th:field="*{secret}" placeholder="prázdné = beze změny (při editaci)">
+                <p class="hint">Jen pro confidential klienty. Nový secret zadej pouze pokud ho chceš změnit.</p>
+
+                <label for="redirectUris">Redirect URI (jeden na řádek)</label>
+                <textarea id="redirectUris" th:field="*{redirectUris}" required></textarea>
+
+                <label for="scopes">Scopes (oddělené mezerou)</label>
+                <input type="text" id="scopes" th:field="*{scopes}" required>
+
+                <div class="checkbox-row">
+                    <input type="checkbox" id="refreshTokenEnabled" th:field="*{refreshTokenEnabled}">
+                    <label for="refreshTokenEnabled">Povolit refresh_token grant</label>
+                </div>
+
+                <div class="checkbox-row">
+                    <input type="checkbox" id="requireProofKey" th:field="*{requireProofKey}">
+                    <label for="requireProofKey">Vyžadovat PKCE</label>
+                </div>
+
+                <label for="accessTokenTtlMinutes">Access token TTL (minuty)</label>
+                <input type="number" id="accessTokenTtlMinutes" th:field="*{accessTokenTtlMinutes}" min="1" required>
+
+                <label for="refreshTokenTtlMinutes">Refresh token TTL (minuty)</label>
+                <input type="number" id="refreshTokenTtlMinutes" th:field="*{refreshTokenTtlMinutes}" min="1" required>
+
+                <div class="form-actions">
+                    <button type="submit">Uložit</button>
+                    <a th:href="@{/admin/clients}" class="button button-secondary">Zrušit</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

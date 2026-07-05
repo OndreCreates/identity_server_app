@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="cs" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>OAuth klienti – Admin</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+    <div class="admin-topbar">
+        <span class="brand">OndreCreates · Identity Server · Admin</span>
+        <form th:action="@{/logout}" method="post" class="logout-form">
+            <button type="submit" class="button-secondary">Odhlásit se</button>
+        </form>
+    </div>
+
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>OAuth klienti</h1>
+            <a th:href="@{/admin/clients/new}" class="button">+ Nový klient</a>
+        </div>
+
+        <div class="panel table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Client ID</th>
+                        <th>Typ</th>
+                        <th>Grant types</th>
+                        <th>Scopes</th>
+                        <th>Redirect URI</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="client : ${clients}">
+                        <td th:text="${client.clientId}"></td>
+                        <td>
+                            <span class="tag" th:text="${client.clientAuthenticationMethods == 'none'} ? 'public' : 'confidential'"></span>
+                        </td>
+                        <td th:text="${client.authorizationGrantTypes}"></td>
+                        <td th:text="${client.scopes}"></td>
+                        <td th:text="${client.redirectUris}"></td>
+                        <td class="row-actions">
+                            <a th:href="@{/admin/clients/{id}/edit(id=${client.clientId})}" class="button button-secondary">Upravit</a>
+                            <form th:action="@{/admin/clients/{id}/delete(id=${client.clientId})}" method="post"
+                                  onsubmit="return confirm('Opravdu smazat klienta ' + this.dataset.clientId + '?');"
+                                  th:data-client-id="${client.clientId}">
+                                <button type="submit" class="button-danger">Smazat</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(clients)}">
+                        <td colspan="6">Žádní klienti.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
