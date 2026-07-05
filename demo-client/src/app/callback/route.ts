@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { oidcConfig } from "@/lib/config";
+import { exchangeAuthorizationCode } from "@/lib/oidcClient";
 import { consumePkce, storeSession } from "@/lib/session";
 import { verifyIdToken } from "@/lib/verifyIdToken";
 
@@ -29,31 +29,19 @@ export async function GET(request: NextRequest) {
         return errorRedirect(request, "Neplatný state -- možný CSRF pokus, přihlas se prosím znovu.");
     }
 
-    const tokenResponse = await fetch(new URL("/oauth2/token", oidcConfig.issuer), {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-            Accept: "application/json",
-        },
-        body: new URLSearchParams({
-            grant_type: "authorization_code",
-            code,
-            redirect_uri: oidcConfig.redirectUri,
-            client_id: oidcConfig.clientId,
-            code_verifier: pkce.verifier,
-        }),
-    });
-
-    if (!tokenResponse.ok) {
-        const details = await tokenResponse.text();
-        return errorRedirect(request, `Token endpoint vrátil chybu (${tokenResponse.status}): ${details}`);
+    let tokens;
+    try {
+        tokens = await exchangeAuthorizationCode(code, pkce.verifier);
+    } catch (cause) {
+        return errorRedirect(request, (cause as Error).message);
     }
 
-    const tokens = (await tokenResponse.json()) as {
-        access_token: string;
-        id_token: string;
-        scope: string;
-    };
+    if (!tokens.refresh_token) {
+        return errorRedirect(
+            request,
+            "Identity server nevrátil refresh token -- zkontroluj, že demo-client má povolený grant type refresh_token.",
+        );
+    }
 
     try {
         await verifyIdToken(tokens.id_token);
@@ -64,7 +52,9 @@ export async function GET(request: NextRequest) {
     await storeSession({
         idToken: tokens.id_token,
         accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
         scope: tokens.scope,
+        accessTokenExpiresAt: Math.floor(Date.now() / 1000) + tokens.expires_in,
     });
 
     return NextResponse.redirect(new URL("/profile", request.url));

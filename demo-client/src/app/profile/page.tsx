@@ -1,11 +1,19 @@
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/session";
+import { getSession, isExpired } from "@/lib/session";
 import { verifyIdToken } from "@/lib/verifyIdToken";
+
+const REFRESH_BUFFER_SECONDS = 10;
 
 export default async function ProfilePage() {
     const session = await getSession();
     if (!session) {
         redirect("/");
+    }
+
+    // Server Components can't set cookies, so an expired access token is handled by
+    // bouncing through the /refresh route handler (which can) and back here.
+    if (isExpired(session.accessTokenExpiresAt, REFRESH_BUFFER_SECONDS)) {
+        redirect("/refresh?next=/profile");
     }
 
     let claims;
@@ -28,7 +36,8 @@ export default async function ProfilePage() {
                     <Row label="Audience" value={claims.aud as string} />
                     <Row label="Scope" value={session.scope} />
                     <Row label="Vydáno" value={formatUnix(claims.iat as number)} />
-                    <Row label="Platnost do" value={formatUnix(claims.exp as number)} />
+                    <Row label="Access token platnost do" value={formatUnix(session.accessTokenExpiresAt)} />
+                    <Row label="ID token platnost do" value={formatUnix(claims.exp as number)} />
                 </dl>
 
                 <details className="mb-8 rounded-lg border border-white/10 bg-slate-950/50 p-4 text-xs">

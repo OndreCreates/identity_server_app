@@ -18,3 +18,7 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+
+app:
+  demo-client:
+    secret: ${DEMO_CLIENT_SECRET:demo-client-dev-secret-change-me}

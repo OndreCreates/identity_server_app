@@ -1,9 +1,11 @@
 package com.ondrecreates.identityserver.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
@@ -15,7 +17,9 @@ import org.springframework.security.oauth2.server.authorization.client.JdbcRegis
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
+import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
 
+import java.time.Duration;
 import java.util.UUID;
 
 /**
@@ -45,23 +49,45 @@ public class ClientConfig {
         return new JdbcOAuth2AuthorizationConsentService(jdbcTemplate, registeredClientRepository);
     }
 
+    /**
+     * Upserts the demo client on every startup rather than seeding once, so config changes
+     * here (grant types, auth method, token TTLs) reach the DB without manual intervention.
+     *
+     * <p>demo-client is a confidential client (client_secret_basic), not a public/PKCE-only
+     * one: it's a Next.js app whose OAuth calls all happen server-side (route handlers), so
+     * a secret can be held safely -- unlike a browser-only SPA. This also unlocks refresh
+     * tokens: Spring Authorization Server never issues a refresh token to a client using
+     * {@code ClientAuthenticationMethod.NONE}, since a public client can't prove it's the
+     * same party the token was issued to when redeeming it. PKCE stays on regardless, as
+     * defense in depth.
+     */
     @Bean
-    public CommandLineRunner demoClientSeeder(RegisteredClientRepository registeredClientRepository) {
+    public CommandLineRunner demoClientSeeder(RegisteredClientRepository registeredClientRepository,
+                                               PasswordEncoder passwordEncoder,
+                                               @Value("${app.demo-client.secret}") String demoClientSecret) {
         return args -> {
-            if (registeredClientRepository.findByClientId(DEMO_CLIENT_ID) != null) {
-                return;
-            }
+            RegisteredClient existing = registeredClientRepository.findByClientId(DEMO_CLIENT_ID);
+            String id = existing != null ? existing.getId() : UUID.randomUUID().toString();
 
-            RegisteredClient demoClient = RegisteredClient.withId(UUID.randomUUID().toString())
+            RegisteredClient demoClient = RegisteredClient.withId(id)
                     .clientId(DEMO_CLIENT_ID)
-                    .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
+                    .clientSecret(passwordEncoder.encode(demoClientSecret))
+                    .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
                     .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                    .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
                     .redirectUri("http://localhost:3000/callback")
                     .scope(OidcScopes.OPENID)
                     .scope(OidcScopes.PROFILE)
                     .clientSettings(ClientSettings.builder()
                             .requireProofKey(true)
                             .requireAuthorizationConsent(false)
+                            .build())
+                    .tokenSettings(TokenSettings.builder()
+                            // Short-lived on purpose: makes refresh-on-expiry observable in a
+                            // manual demo without waiting around. Not a production value.
+                            .accessTokenTimeToLive(Duration.ofMinutes(1))
+                            .refreshTokenTimeToLive(Duration.ofMinutes(30))
+                            .reuseRefreshTokens(false)
                             .build())
                     .build();
 

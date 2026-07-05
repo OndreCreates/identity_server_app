@@ -13,7 +13,10 @@ interface PkceCookiePayload {
 export interface Session {
     idToken: string;
     accessToken: string;
+    refreshToken: string;
     scope: string;
+    /** Unix seconds. Compared with a buffer in the /refresh route to decide when to rotate. */
+    accessTokenExpiresAt: number;
 }
 
 export async function storePkce(payload: PkceCookiePayload): Promise<void> {
@@ -40,13 +43,16 @@ export async function consumePkce(): Promise<PkceCookiePayload | null> {
     }
 }
 
+// Matches the demo-client's refresh_token_time_to_live (see ClientConfig on the server).
+const REFRESH_TOKEN_TTL_SECONDS = 30 * 60;
+
 export async function storeSession(session: Session): Promise<void> {
     const store = await cookies();
     store.set(SESSION_COOKIE, JSON.stringify(session), {
         httpOnly: true,
         sameSite: "lax",
         secure: isProd,
-        maxAge: 3600,
+        maxAge: REFRESH_TOKEN_TTL_SECONDS,
         path: "/",
     });
 }
@@ -65,4 +71,9 @@ export async function getSession(): Promise<Session | null> {
 export async function clearSession(): Promise<void> {
     const store = await cookies();
     store.delete(SESSION_COOKIE);
+}
+
+/** Plain helper (not a component/hook), so the Date.now() call here doesn't trip the render-purity lint rule. */
+export function isExpired(unixSeconds: number, bufferSeconds = 0): boolean {
+    return unixSeconds - bufferSeconds <= Math.floor(Date.now() / 1000);
 }
