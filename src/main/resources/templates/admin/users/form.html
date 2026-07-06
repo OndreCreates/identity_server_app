@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="cs" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${isNew} ? 'Nový uživatel – Admin' : 'Upravit uživatele – Admin'"></title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+    <div th:replace="~{admin/fragments/topbar :: topbar(active='users')}"></div>
+
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1 th:text="${isNew} ? 'Nový uživatel' : 'Upravit uživatele'"></h1>
+        </div>
+
+        <div class="panel form-panel">
+            <form th:action="${isNew} ? @{/admin/users} : @{/admin/users/{id}(id=${userId})}"
+                  th:object="${form}" method="post">
+
+                <div class="error" th:if="${error}" th:text="${error}"></div>
+
+                <label for="email">Email</label>
+                <input type="email" id="email" th:field="*{email}" required>
+
+                <label for="password">Heslo</label>
+                <input type="password" id="password" th:field="*{password}" placeholder="prázdné = beze změny (při editaci)">
+                <p class="hint" th:if="${isNew}">Povinné pro nového uživatele.</p>
+                <p class="hint" th:unless="${isNew}">Nové heslo zadej pouze pokud ho chceš změnit.</p>
+
+                <div class="checkbox-row">
+                    <input type="checkbox" id="enabled" th:field="*{enabled}">
+                    <label for="enabled">Účet aktivní</label>
+                </div>
+
+                <div class="checkbox-row">
+                    <input type="checkbox" id="roleUser" th:field="*{roleUser}">
+                    <label for="roleUser">Role USER</label>
+                </div>
+
+                <div class="checkbox-row">
+                    <input type="checkbox" id="roleAdmin" th:field="*{roleAdmin}">
+                    <label for="roleAdmin">Role ADMIN</label>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit">Uložit</button>
+                    <a th:href="@{/admin/users}" class="button button-secondary">Zrušit</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

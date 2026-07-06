@@ -161,6 +161,35 @@ button:hover,
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+.admin-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+}
+
+.admin-nav {
+    display: flex;
+    gap: 4px;
+}
+
+.admin-nav-link {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #9aa2b6;
+    text-decoration: none;
+}
+
+.admin-nav-link:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.admin-nav-link.active {
+    background: rgba(91, 124, 250, 0.15);
+    color: #a9bcff;
+}
+
 .admin-container {
     max-width: 1200px;
     margin: 0 auto;

@@ -6,12 +6,7 @@
     <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body>
-    <div class="admin-topbar">
-        <span class="brand">OndreCreates · Identity Server · Admin</span>
-        <form th:action="@{/logout}" method="post" class="logout-form">
-            <button type="submit" class="button-secondary">Odhlásit se</button>
-        </form>
-    </div>
+    <div th:replace="~{admin/fragments/topbar :: topbar(active='clients')}"></div>
 
     <div class="admin-container">
         <div class="admin-header">

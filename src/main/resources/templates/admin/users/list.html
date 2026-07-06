@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="cs" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Uživatelé – Admin</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+    <div th:replace="~{admin/fragments/topbar :: topbar(active='users')}"></div>
+
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>Uživatelé</h1>
+            <a th:href="@{/admin/users/new}" class="button">+ Nový uživatel</a>
+        </div>
+
+        <div class="error" th:if="${error}" th:text="${error}"></div>
+
+        <div class="panel table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Stav</th>
+                        <th>Role</th>
+                        <th>Vytvořen</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="user : ${users}">
+                        <td th:text="${user.email}"></td>
+                        <td>
+                            <span class="tag" th:text="${user.enabled} ? 'aktivní' : 'zakázaný'"></span>
+                        </td>
+                        <td>
+                            <span class="tag" th:each="role : ${user.roles}" th:text="${role}"></span>
+                        </td>
+                        <td th:text="${#temporals.format(user.createdAt, 'd.M.yyyy HH:mm')}"></td>
+                        <td class="row-actions">
+                            <a th:href="@{/admin/users/{id}/edit(id=${user.id})}" class="button button-secondary">Upravit</a>
+                            <form th:action="@{/admin/users/{id}/delete(id=${user.id})}" method="post"
+                                  onsubmit="return confirm('Opravdu smazat uživatele ' + this.dataset.email + '?');"
+                                  th:data-email="${user.email}">
+                                <button type="submit" class="button-danger">Smazat</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(users)}">
+                        <td colspan="5">Žádní uživatelé.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

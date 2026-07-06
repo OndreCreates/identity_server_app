@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+    <div class="admin-topbar" th:fragment="topbar(active)">
+        <div class="admin-topbar-left">
+            <span class="brand">OndreCreates · Identity Server · Admin</span>
+            <nav class="admin-nav">
+                <a th:href="@{/admin/clients}" class="admin-nav-link" th:classappend="${active == 'clients'} ? ' active'">Klienti</a>
+                <a th:href="@{/admin/users}" class="admin-nav-link" th:classappend="${active == 'users'} ? ' active'">Uživatelé</a>
+            </nav>
+        </div>
+        <form th:action="@{/logout}" method="post" class="logout-form">
+            <button type="submit" class="button-secondary">Odhlásit se</button>
+        </form>
+    </div>
+</body>
+</html>
