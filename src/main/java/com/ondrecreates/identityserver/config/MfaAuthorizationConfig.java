@@ -40,7 +40,7 @@ public class MfaAuthorizationConfig {
     }
 
     @Bean
-    public AccessDeniedHandler mfaAccessDeniedHandler() {
-        return new MfaAccessDeniedHandler();
+    public AccessDeniedHandler mfaAccessDeniedHandler(MfaService mfaService) {
+        return new MfaAccessDeniedHandler(mfaService);
     }
 }

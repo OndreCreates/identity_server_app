@@ -2,10 +2,12 @@ package com.ondrecreates.identityserver.config;
 
 import com.ondrecreates.identityserver.mfa.TotpAuthenticationFilter;
 import com.ondrecreates.identityserver.mfa.TotpAuthenticationProvider;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.DefaultAuthenticationEventPublisher;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.authorization.AuthenticatedAuthorizationManager;
 import org.springframework.security.authorization.AuthorizationManagerFactory;
@@ -33,12 +35,17 @@ public class DefaultSecurityConfig {
                                                             DaoAuthenticationProvider daoAuthenticationProvider,
                                                             TotpAuthenticationProvider totpAuthenticationProvider,
                                                             AuthorizationManagerFactory<Object> mfaAuthorization,
-                                                            AccessDeniedHandler mfaAccessDeniedHandler) throws Exception {
+                                                            AccessDeniedHandler mfaAccessDeniedHandler,
+                                                            ApplicationEventPublisher eventPublisher) throws Exception {
         AuthenticationManagerBuilder authenticationManagerBuilder =
                 http.getSharedObject(AuthenticationManagerBuilder.class);
         authenticationManagerBuilder
                 .authenticationProvider(daoAuthenticationProvider)
-                .authenticationProvider(totpAuthenticationProvider);
+                .authenticationProvider(totpAuthenticationProvider)
+                // Not guaranteed to be inherited from the global AuthenticationManagerBuilder bean --
+                // this local, HttpSecurity-scoped builder needs its own publisher wired explicitly for
+                // AuditEventListener to see login/MFA success and failure events.
+                .authenticationEventPublisher(new DefaultAuthenticationEventPublisher(eventPublisher));
         AuthenticationManager authenticationManager = authenticationManagerBuilder.build();
 
         TotpAuthenticationFilter totpAuthenticationFilter = new TotpAuthenticationFilter(authenticationManager);
