@@ -285,12 +285,55 @@ tr:last-child td {
     max-width: 560px;
 }
 
-.form-panel form {
+.form-panel form,
+.panel-padded {
     padding: 32px;
+}
+
+.panel-padded > .hint:first-child,
+.form-panel form > .hint:first-child {
+    margin-top: 0;
+}
+
+.panel-padded h1 {
+    margin: 0 0 24px;
+    font-size: 20px;
+    color: #f4f5f7;
 }
 
 .form-actions {
     display: flex;
     gap: 12px;
     margin-top: 8px;
+}
+
+.spaced {
+    margin-bottom: 20px;
+}
+
+.notice {
+    background: rgba(91, 124, 250, 0.1);
+    border-color: rgba(91, 124, 250, 0.3);
+    color: #a9bcff;
+}
+
+.qr-code {
+    display: block;
+    width: 200px;
+    height: 200px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.secret-key {
+    font-family: monospace;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+}
+
+.recovery-codes {
+    font-family: monospace;
+    font-size: 15px;
+    line-height: 2;
+    margin-bottom: 24px;
 }

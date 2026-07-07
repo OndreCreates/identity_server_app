@@ -5,6 +5,7 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Direct SQL access to oauth2_registered_client for admin listing/deletion.
@@ -41,14 +42,15 @@ public class RegisteredClientAdminDao {
 
     /** Also removes authorizations/consents issued for the client, so nothing is left pointing at a dead client_id. */
     public void deleteByClientId(String clientId) {
-        jdbcTemplate.update("""
-                DELETE FROM oauth2_authorization_consent
-                WHERE registered_client_id = (SELECT id FROM oauth2_registered_client WHERE client_id = ?)
-                """, clientId);
-        jdbcTemplate.update("""
-                DELETE FROM oauth2_authorization
-                WHERE registered_client_id = (SELECT id FROM oauth2_registered_client WHERE client_id = ?)
-                """, clientId);
+        List<String> ids = jdbcTemplate.queryForList(
+                "SELECT id FROM oauth2_registered_client WHERE client_id = ?", String.class, clientId);
+        Optional<String> id = ids.stream().findFirst();
+        if (id.isEmpty()) {
+            return;
+        }
+
+        jdbcTemplate.update("DELETE FROM oauth2_authorization_consent WHERE registered_client_id = ?", id.get());
+        jdbcTemplate.update("DELETE FROM oauth2_authorization WHERE registered_client_id = ?", id.get());
         jdbcTemplate.update("DELETE FROM oauth2_registered_client WHERE client_id = ?", clientId);
     }
 }

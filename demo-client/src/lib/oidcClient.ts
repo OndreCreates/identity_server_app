@@ -1,4 +1,5 @@
 import { oidcConfig } from "@/lib/config";
+import type { Session } from "@/lib/session";
 
 export interface TokenResponse {
     access_token: string;
@@ -6,6 +7,16 @@ export interface TokenResponse {
     refresh_token?: string;
     scope: string;
     expires_in: number;
+}
+
+/** Rotation doesn't always return a fresh refresh_token, so a fallback (the one just spent) is required. */
+export function toSession(tokens: TokenResponse, fallbackRefreshToken: string): Session {
+    return {
+        idToken: tokens.id_token,
+        refreshToken: tokens.refresh_token ?? fallbackRefreshToken,
+        scope: tokens.scope,
+        accessTokenExpiresAt: Math.floor(Date.now() / 1000) + tokens.expires_in,
+    };
 }
 
 function basicAuthHeader(): string {

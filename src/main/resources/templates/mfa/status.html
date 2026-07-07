@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="cs" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>MFA – Nastavení</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+    <div th:replace="~{admin/fragments/topbar :: topbar(active=${null})}"></div>
+
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>Dvoufázové ověření</h1>
+            <a th:href="@{/account}" class="button button-secondary">Zpět</a>
+        </div>
+
+        <div class="panel form-panel panel-padded">
+            <div th:if="${mfaEnabled}">
+                <p>MFA je pro tvůj účet <strong>zapnuté</strong>.</p>
+                <form th:action="@{/account/mfa/disable}" method="post"
+                      onsubmit="return confirm('Opravdu vypnout MFA? Ztratíš i stávající recovery kódy.');">
+                    <button type="submit" class="button-danger">Vypnout MFA</button>
+                </form>
+            </div>
+            <div th:unless="${mfaEnabled}">
+                <p>MFA je pro tvůj účet <strong>vypnuté</strong>.</p>
+                <a th:href="@{/account/mfa/setup}" class="button">Nastavit MFA</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

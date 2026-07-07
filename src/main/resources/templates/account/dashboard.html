@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="cs" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Můj účet</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+    <div th:replace="~{admin/fragments/topbar :: topbar(active=${null})}"></div>
+
+    <div class="admin-container">
+        <div class="panel form-panel panel-padded">
+            <p class="hint">Přihlášen jako</p>
+            <h1 th:text="${email}"></h1>
+
+            <p class="hint">Dvoufázové ověření (TOTP)</p>
+            <p class="spaced">
+                <span class="tag" th:text="${mfaEnabled} ? 'zapnuté' : 'vypnuté'"></span>
+            </p>
+
+            <a th:href="@{/account/mfa}" class="button">Spravovat MFA</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -69,9 +69,15 @@ public class ClientConfig {
             RegisteredClient existing = registeredClientRepository.findByClientId(DEMO_CLIENT_ID);
             String id = existing != null ? existing.getId() : UUID.randomUUID().toString();
 
+            // BCrypt is deliberately slow -- skip re-encoding (and the resulting no-op write)
+            // on every restart when the configured secret hasn't actually changed.
+            boolean secretUnchanged = existing != null
+                    && passwordEncoder.matches(demoClientSecret, existing.getClientSecret());
+            String clientSecret = secretUnchanged ? existing.getClientSecret() : passwordEncoder.encode(demoClientSecret);
+
             RegisteredClient demoClient = RegisteredClient.withId(id)
                     .clientId(DEMO_CLIENT_ID)
-                    .clientSecret(passwordEncoder.encode(demoClientSecret))
+                    .clientSecret(clientSecret)
                     .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
                     .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                     .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)

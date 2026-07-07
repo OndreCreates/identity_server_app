@@ -46,7 +46,7 @@ public class UserAdminService {
      */
     public void update(Long id, UserFormDto form, String currentUserEmail) {
         AppUser user = require(id);
-        boolean isSelf = user.getEmail().equalsIgnoreCase(currentUserEmail);
+        boolean isSelf = isSelf(user, currentUserEmail);
 
         if (isSelf && !form.isRoleAdmin()) {
             throw new IllegalArgumentException("Nemůžeš si sám sobě odebrat roli ADMIN.");
@@ -66,10 +66,14 @@ public class UserAdminService {
 
     public void delete(Long id, String currentUserEmail) {
         AppUser user = require(id);
-        if (user.getEmail().equalsIgnoreCase(currentUserEmail)) {
+        if (isSelf(user, currentUserEmail)) {
             throw new IllegalArgumentException("Nemůžeš smazat vlastní účet.");
         }
         appUserRepository.delete(user);
+    }
+
+    private static boolean isSelf(AppUser user, String currentUserEmail) {
+        return user.getEmail().equalsIgnoreCase(currentUserEmail);
     }
 
     private static Set<String> rolesFrom(UserFormDto form) {

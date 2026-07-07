@@ -3,8 +3,8 @@
 <body>
     <div class="admin-topbar" th:fragment="topbar(active)">
         <div class="admin-topbar-left">
-            <span class="brand">OndreCreates · Identity Server · Admin</span>
-            <nav class="admin-nav">
+            <span class="brand">OndreCreates · Identity Server<span th:if="${active != null}"> · Admin</span></span>
+            <nav class="admin-nav" th:if="${active != null}">
                 <a th:href="@{/admin/clients}" class="admin-nav-link" th:classappend="${active == 'clients'} ? ' active'">Klienti</a>
                 <a th:href="@{/admin/users}" class="admin-nav-link" th:classappend="${active == 'users'} ? ' active'">Uživatelé</a>
             </nav>

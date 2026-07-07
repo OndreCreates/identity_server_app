@@ -12,7 +12,8 @@ interface PkceCookiePayload {
 
 export interface Session {
     idToken: string;
-    accessToken: string;
+    // No access token here: nothing in this app calls a protected resource with it, so
+    // there's no reason to carry it around in the session cookie.
     refreshToken: string;
     scope: string;
     /** Unix seconds. Compared with a buffer in the /refresh route to decide when to rotate. */

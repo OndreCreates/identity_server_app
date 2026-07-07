@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="cs" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Recovery kódy</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+    <div th:replace="~{admin/fragments/topbar :: topbar(active=${null})}"></div>
+
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>Recovery kódy</h1>
+        </div>
+
+        <div class="panel form-panel panel-padded">
+            <div class="error notice">
+                Tyhle kódy se zobrazí <strong>jen teď</strong>. Ulož si je na bezpečné místo — každý
+                jde použít místo TOTP kódu, pokud ztratíš přístup k autentikátoru, a to jen jednou.
+            </div>
+
+            <div class="recovery-codes">
+                <div th:each="code : ${recoveryCodes}" th:text="${code}"></div>
+            </div>
+
+            <a th:href="@{/account/mfa}" class="button">Uložil(a) jsem si je, pokračovat</a>
+        </div>
+    </div>
+</body>
+</html>

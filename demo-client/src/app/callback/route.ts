@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { exchangeAuthorizationCode } from "@/lib/oidcClient";
+import { exchangeAuthorizationCode, toSession } from "@/lib/oidcClient";
 import { consumePkce, storeSession } from "@/lib/session";
 import { verifyIdToken } from "@/lib/verifyIdToken";
 
@@ -49,13 +49,7 @@ export async function GET(request: NextRequest) {
         return errorRedirect(request, `ID token se nepodařilo ověřit přes JWKS: ${(cause as Error).message}`);
     }
 
-    await storeSession({
-        idToken: tokens.id_token,
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token,
-        scope: tokens.scope,
-        accessTokenExpiresAt: Math.floor(Date.now() / 1000) + tokens.expires_in,
-    });
+    await storeSession(toSession(tokens, tokens.refresh_token));
 
     return NextResponse.redirect(new URL("/profile", request.url));
 }

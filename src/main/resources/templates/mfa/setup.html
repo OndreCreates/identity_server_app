@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="cs" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Nastavit MFA</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+    <div th:replace="~{admin/fragments/topbar :: topbar(active=${null})}"></div>
+
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>Nastavit dvoufázové ověření</h1>
+        </div>
+
+        <div class="panel form-panel">
+            <form th:action="@{/account/mfa/setup}" method="post">
+                <div class="error" th:if="${error}" th:text="${error}"></div>
+
+                <p class="hint">
+                    1. Naskenuj QR kód v aplikaci Google Authenticator, Authy nebo podobné.
+                </p>
+                <img th:src="${qrCodeDataUri}" alt="QR kód pro MFA" class="qr-code">
+
+                <p class="hint">Nebo zadej ručně tenhle klíč:</p>
+                <p class="secret-key" th:text="${secret}"></p>
+
+                <label for="code">2. Zadej 6místný kód z aplikace</label>
+                <input type="text" id="code" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autofocus>
+
+                <div class="form-actions">
+                    <button type="submit">Potvrdit a zapnout</button>
+                    <a th:href="@{/account/mfa}" class="button button-secondary">Zrušit</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

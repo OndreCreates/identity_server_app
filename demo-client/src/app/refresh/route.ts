@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { refreshAccessToken } from "@/lib/oidcClient";
+import { refreshAccessToken, toSession } from "@/lib/oidcClient";
 import { clearSession, getSession, storeSession } from "@/lib/session";
 
 /** Only ever redirect back into this app -- never trust `next` as an absolute URL. */
@@ -18,15 +18,7 @@ export async function GET(request: NextRequest) {
 
     try {
         const tokens = await refreshAccessToken(session.refreshToken);
-
-        await storeSession({
-            idToken: tokens.id_token,
-            accessToken: tokens.access_token,
-            // Rotation means the old refresh token is now dead -- always take the new one.
-            refreshToken: tokens.refresh_token ?? session.refreshToken,
-            scope: tokens.scope,
-            accessTokenExpiresAt: Math.floor(Date.now() / 1000) + tokens.expires_in,
-        });
+        await storeSession(toSession(tokens, session.refreshToken));
 
         return NextResponse.redirect(new URL(next, request.url));
     } catch (cause) {

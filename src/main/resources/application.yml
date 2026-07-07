@@ -22,3 +22,6 @@ spring:
 app:
   demo-client:
     secret: ${DEMO_CLIENT_SECRET:demo-client-dev-secret-change-me}
+  mfa:
+    # Base64-encoded 256-bit AES key. Dev-only default -- generate a real one per environment.
+    encryption-key: ${MFA_ENCRYPTION_KEY:clbLPsWb+rlRiazzQY/Sf50oVPAxu7Co3/JimoQEkQY=}
