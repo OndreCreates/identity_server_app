@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
+import org.springframework.security.authorization.AuthorizationManagerFactory;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
@@ -16,6 +17,7 @@ import org.springframework.security.config.annotation.web.configurers.oauth2.ser
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 
@@ -34,7 +36,9 @@ public class AuthorizationServerConfig {
 
     @Bean
     @Order(1)
-    public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http,
+                                                                        AuthorizationManagerFactory<Object> mfaAuthorization,
+                                                                        AccessDeniedHandler mfaAccessDeniedHandler) throws Exception {
         OAuth2AuthorizationServerConfigurer authorizationServerConfigurer =
                 new OAuth2AuthorizationServerConfigurer();
 
@@ -42,11 +46,16 @@ public class AuthorizationServerConfig {
                 .securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
                 .with(authorizationServerConfigurer, (authorizationServer) ->
                         authorizationServer.oidc(Customizer.withDefaults()))
-                .authorizeHttpRequests((authorize) -> authorize.anyRequest().authenticated())
+                // MFA-enrolled users need the TOTP factor here too -- this is how a demo client
+                // (or anything else) actually obtains tokens on the user's behalf, so gating
+                // only the ordinary pages and leaving this endpoint on password-only auth would
+                // make the whole MFA feature pointless.
+                .authorizeHttpRequests((authorize) -> authorize.anyRequest().access(mfaAuthorization.authenticated()))
                 .exceptionHandling((exceptions) -> exceptions
                         .defaultAuthenticationEntryPointFor(
                                 new LoginUrlAuthenticationEntryPoint("/login"),
-                                new MediaTypeRequestMatcher(MediaType.TEXT_HTML)));
+                                new MediaTypeRequestMatcher(MediaType.TEXT_HTML))
+                        .accessDeniedHandler(mfaAccessDeniedHandler));
 
         return http.build();
     }

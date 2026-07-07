@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="cs" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Dvoufázové ověření – Identity Server</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body class="auth-page">
+    <div class="card">
+        <div class="brand">OndreCreates · Identity Server</div>
+        <h1>Zadej ověřovací kód</h1>
+
+        <div class="error" th:if="${param.error}">
+            Neplatný kód. Zkus to znovu, nebo použij jeden z recovery kódů.
+        </div>
+
+        <form th:action="@{/login/mfa}" method="post">
+            <label for="code">Kód z aplikace (nebo recovery kód)</label>
+            <input type="text" id="code" name="code" required autofocus autocomplete="one-time-code">
+
+            <button type="submit">Ověřit</button>
+        </form>
+    </div>
+</body>
+</html>

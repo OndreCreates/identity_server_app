@@ -18,7 +18,6 @@ import java.util.List;
 public class MfaController {
 
     private static final String SESSION_PENDING_SECRET = "PENDING_MFA_SECRET";
-    private static final String SESSION_RECOVERY_CODES = "MFA_RECOVERY_CODES";
 
     private final AppUserRepository appUserRepository;
     private final MfaService mfaService;
@@ -61,22 +60,14 @@ public class MfaController {
             return "mfa/setup";
         }
 
+        // Rendered directly rather than redirected: a redirect would issue a brand new GET
+        // that gets authorization-checked on its own, and this session hasn't proven the TOTP
+        // factor yet at this exact moment (it just proved the secret works, which isn't the
+        // same thing as completing the /login/mfa challenge) -- it would bounce the user into
+        // a confusing second challenge before they ever see their own recovery codes.
         List<String> recoveryCodes = mfaService.enroll(user.getId(), pendingSecret);
         session.removeAttribute(SESSION_PENDING_SECRET);
-        session.setAttribute(SESSION_RECOVERY_CODES, recoveryCodes);
-        return "redirect:/account/mfa/recovery-codes";
-    }
-
-    @GetMapping("/recovery-codes")
-    public String recoveryCodes(HttpSession session, Model model) {
-        @SuppressWarnings("unchecked")
-        List<String> codes = (List<String>) session.getAttribute(SESSION_RECOVERY_CODES);
-        if (codes == null) {
-            return "redirect:/account/mfa";
-        }
-        // Shown exactly once -- gone from the session the moment this page is rendered.
-        session.removeAttribute(SESSION_RECOVERY_CODES);
-        model.addAttribute("recoveryCodes", codes);
+        model.addAttribute("recoveryCodes", recoveryCodes);
         return "mfa/recovery-codes";
     }
 

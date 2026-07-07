@@ -12,6 +12,7 @@ import dev.samstevens.totp.recovery.RecoveryCodeGenerator;
 import dev.samstevens.totp.secret.DefaultSecretGenerator;
 import dev.samstevens.totp.secret.SecretGenerator;
 import dev.samstevens.totp.time.SystemTimeProvider;
+import com.ondrecreates.identityserver.user.AppUserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +28,7 @@ public class MfaService {
 
     private final MfaSecretRepository mfaSecretRepository;
     private final MfaRecoveryCodeRepository mfaRecoveryCodeRepository;
+    private final AppUserRepository appUserRepository;
     private final MfaSecretCipher cipher;
     private final PasswordEncoder passwordEncoder;
 
@@ -37,16 +39,52 @@ public class MfaService {
 
     public MfaService(MfaSecretRepository mfaSecretRepository,
                        MfaRecoveryCodeRepository mfaRecoveryCodeRepository,
+                       AppUserRepository appUserRepository,
                        MfaSecretCipher cipher,
                        PasswordEncoder passwordEncoder) {
         this.mfaSecretRepository = mfaSecretRepository;
         this.mfaRecoveryCodeRepository = mfaRecoveryCodeRepository;
+        this.appUserRepository = appUserRepository;
         this.cipher = cipher;
         this.passwordEncoder = passwordEncoder;
     }
 
     public boolean isEnabled(Long userId) {
         return mfaSecretRepository.findByUserId(userId).isPresent();
+    }
+
+    /** Used by the login-time authorization check, which only has the principal's email/username. */
+    public boolean isEnabledForEmail(String email) {
+        return appUserRepository.findByEmail(email)
+                .map(user -> isEnabled(user.getId()))
+                .orElse(false);
+    }
+
+    /**
+     * Checks a login-time code against the user's TOTP secret first, then their unused
+     * recovery codes. A matching recovery code is consumed (marked used) on success.
+     */
+    @Transactional
+    public boolean verifyLoginCode(Long userId, String code) {
+        MfaSecret secret = mfaSecretRepository.findByUserId(userId).orElse(null);
+        if (secret == null) {
+            return false;
+        }
+        if (verifyCode(cipher.decrypt(secret.getSecretEncrypted()), code)) {
+            return true;
+        }
+        return consumeRecoveryCodeIfValid(userId, code);
+    }
+
+    private boolean consumeRecoveryCodeIfValid(Long userId, String code) {
+        for (MfaRecoveryCode recoveryCode : mfaRecoveryCodeRepository.findByUserId(userId)) {
+            if (!recoveryCode.isUsed() && passwordEncoder.matches(code, recoveryCode.getCodeHash())) {
+                recoveryCode.markUsed();
+                mfaRecoveryCodeRepository.save(recoveryCode);
+                return true;
+            }
+        }
+        return false;
     }
 
     public String generateSecret() {
