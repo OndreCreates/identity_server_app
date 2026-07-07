@@ -18,5 +18,49 @@ services:
       timeout: 5s
       retries: 10
 
+  identity-server:
+    build:
+      context: .
+    container_name: identity-server
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      # Overrides application.yml's hardcoded "localhost" host -- inside Compose's network,
+      # the database is reachable at the "mysql" service name, not this container's own loopback.
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${DB_NAME:-identity_server}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: ${DB_USER:-identity_app}
+      DB_PASSWORD: ${DB_PASSWORD:-changeme}
+      DEMO_CLIENT_SECRET: ${DEMO_CLIENT_SECRET:-demo-client-dev-secret-change-me}
+      MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY}
+    ports:
+      - "9000:9000"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9000/login"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  demo-client:
+    build:
+      context: ./demo-client
+    container_name: identity-server-demo-client
+    restart: unless-stopped
+    depends_on:
+      identity-server:
+        condition: service_healthy
+    environment:
+      # Must stay host-reachable (localhost) -- this is where the *browser* gets redirected
+      # for login, and the value baked into every token's `iss` claim.
+      IDENTITY_SERVER_ISSUER: http://localhost:9000
+      # This container reaches the identity server directly via Compose's internal network.
+      IDENTITY_SERVER_INTERNAL_URL: http://identity-server:9000
+      OAUTH_CLIENT_ID: demo-client
+      OAUTH_CLIENT_SECRET: ${DEMO_CLIENT_SECRET:-demo-client-dev-secret-change-me}
+      OAUTH_REDIRECT_URI: http://localhost:3000/callback
+    ports:
+      - "3000:3000"
+
 volumes:
   mysql_data:

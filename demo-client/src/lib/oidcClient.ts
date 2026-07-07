@@ -25,7 +25,7 @@ function basicAuthHeader(): string {
 }
 
 async function tokenRequest(params: Record<string, string>): Promise<TokenResponse> {
-    const response = await fetch(new URL("/oauth2/token", oidcConfig.issuer), {
+    const response = await fetch(new URL("/oauth2/token", oidcConfig.internalUrl), {
         method: "POST",
         headers: {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -67,7 +67,7 @@ export async function revokeToken(
 ): Promise<void> {
     // RFC 7009: the endpoint responds 200 even for an already-invalid/unknown token,
     // so there is nothing meaningful to branch on here -- best-effort from the client's side.
-    await fetch(new URL("/oauth2/revoke", oidcConfig.issuer), {
+    await fetch(new URL("/oauth2/revoke", oidcConfig.internalUrl), {
         method: "POST",
         headers: {
             "Content-Type": "application/x-www-form-urlencoded",
