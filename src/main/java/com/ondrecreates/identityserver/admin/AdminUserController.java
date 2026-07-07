@@ -81,7 +81,7 @@ public class AdminUserController {
         return "redirect:/admin/users";
     }
 
-    private static String friendlyMessage(Exception ex) {
+    private static String friendlyMessage(RuntimeException ex) {
         if (ex instanceof DataIntegrityViolationException) {
             return "Email už existuje, nebo jsou zadaná data neplatná.";
         }

@@ -7,6 +7,7 @@
             <nav class="admin-nav" th:if="${active != null}">
                 <a th:href="@{/admin/clients}" class="admin-nav-link" th:classappend="${active == 'clients'} ? ' active'">Klienti</a>
                 <a th:href="@{/admin/users}" class="admin-nav-link" th:classappend="${active == 'users'} ? ' active'">Uživatelé</a>
+                <a th:href="@{/admin/audit}" class="admin-nav-link" th:classappend="${active == 'audit'} ? ' active'">Audit log</a>
             </nav>
         </div>
         <form th:action="@{/logout}" method="post" class="logout-form">

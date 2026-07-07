@@ -64,7 +64,8 @@ public class ClientConfig {
     @Bean
     public CommandLineRunner demoClientSeeder(RegisteredClientRepository registeredClientRepository,
                                                PasswordEncoder passwordEncoder,
-                                               @Value("${app.demo-client.secret}") String demoClientSecret) {
+                                               @Value("${app.demo-client.secret}") String demoClientSecret,
+                                               @Value("${app.demo-client.redirect-uri}") String demoClientRedirectUri) {
         return args -> {
             RegisteredClient existing = registeredClientRepository.findByClientId(DEMO_CLIENT_ID);
             String id = existing != null ? existing.getId() : UUID.randomUUID().toString();
@@ -81,7 +82,7 @@ public class ClientConfig {
                     .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
                     .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                     .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                    .redirectUri("http://localhost:3000/callback")
+                    .redirectUri(demoClientRedirectUri)
                     .scope(OidcScopes.OPENID)
                     .scope(OidcScopes.PROFILE)
                     .clientSettings(ClientSettings.builder()

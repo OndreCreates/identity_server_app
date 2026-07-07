@@ -106,4 +106,36 @@ class MfaEnforcementTests extends AbstractIntegrationTest {
         mockMvc.perform(get("/admin/clients").session(session))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    void disablingMfaRequiresTheCurrentCode() throws Exception {
+        String secret = enrollMfaForSeededAdmin();
+        AppUser admin = appUserRepository.findByEmail(SEEDED_ADMIN_EMAIL).orElseThrow();
+        MockHttpSession session = loginAsSeededAdmin();
+
+        mockMvc.perform(post("/account/mfa/disable").session(session).with(csrf()).param("code", "000000"))
+                .andExpect(status().isOk());
+        assertThat(mfaService.isEnabled(admin.getId())).isTrue();
+
+        mockMvc.perform(post("/account/mfa/disable").session(session).with(csrf())
+                        .param("code", TotpCodes.currentCode(secret)))
+                .andExpect(status().is3xxRedirection());
+        assertThat(mfaService.isEnabled(admin.getId())).isFalse();
+    }
+
+    @Test
+    void totpVerificationLocksOutAfterRepeatedFailures() throws Exception {
+        String secret = enrollMfaForSeededAdmin();
+        MockHttpSession session = loginAsSeededAdmin();
+
+        for (int i = 0; i < 5; i++) {
+            mockMvc.perform(post("/login/mfa").session(session).with(csrf()).param("code", "000000"))
+                    .andExpect(status().is3xxRedirection());
+        }
+
+        // Even the CORRECT code must now be rejected -- the lockout, not the code, is why.
+        mockMvc.perform(post("/login/mfa").session(session).with(csrf()).param("code", TotpCodes.currentCode(secret)))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(result -> assertThat(result.getResponse().getRedirectedUrl()).contains("/login/mfa?error"));
+    }
 }

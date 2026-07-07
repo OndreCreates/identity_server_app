@@ -20,8 +20,12 @@ spring:
     locations: classpath:db/migration
 
 app:
+  # Baked into every issued token's `iss` claim and used to build the JWKS/discovery URLs --
+  # must be the address clients and browsers actually reach this server at.
+  issuer: ${APP_ISSUER:http://localhost:9000}
   demo-client:
     secret: ${DEMO_CLIENT_SECRET:demo-client-dev-secret-change-me}
+    redirect-uri: ${DEMO_CLIENT_REDIRECT_URI:http://localhost:3000/callback}
   mfa:
     # Base64-encoded 256-bit AES key. Dev-only default -- generate a real one per environment.
     encryption-key: ${MFA_ENCRYPTION_KEY:clbLPsWb+rlRiazzQY/Sf50oVPAxu7Co3/JimoQEkQY=}

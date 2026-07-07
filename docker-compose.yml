@@ -34,6 +34,11 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-changeme}
       DEMO_CLIENT_SECRET: ${DEMO_CLIENT_SECRET:-demo-client-dev-secret-change-me}
       MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY}
+      # Defaults match the host-published ports below -- correct for running this stack
+      # locally. Override both (and the demo-client's matching values) for a real deployment
+      # behind real domains.
+      APP_ISSUER: ${APP_ISSUER:-http://localhost:9000}
+      DEMO_CLIENT_REDIRECT_URI: ${DEMO_CLIENT_REDIRECT_URI:-http://localhost:3000/callback}
     ports:
       - "9000:9000"
     healthcheck:
@@ -51,16 +56,24 @@ services:
       identity-server:
         condition: service_healthy
     environment:
-      # Must stay host-reachable (localhost) -- this is where the *browser* gets redirected
-      # for login, and the value baked into every token's `iss` claim.
-      IDENTITY_SERVER_ISSUER: http://localhost:9000
-      # This container reaches the identity server directly via Compose's internal network.
+      # Must match identity-server's APP_ISSUER above -- this is where the *browser* gets
+      # redirected for login, and the value baked into every token's `iss` claim.
+      IDENTITY_SERVER_ISSUER: ${APP_ISSUER:-http://localhost:9000}
+      # This container reaches the identity server directly via Compose's internal network,
+      # regardless of what the public issuer above is set to.
       IDENTITY_SERVER_INTERNAL_URL: http://identity-server:9000
       OAUTH_CLIENT_ID: demo-client
       OAUTH_CLIENT_SECRET: ${DEMO_CLIENT_SECRET:-demo-client-dev-secret-change-me}
-      OAUTH_REDIRECT_URI: http://localhost:3000/callback
+      # Must match identity-server's DEMO_CLIENT_REDIRECT_URI above exactly (it's validated
+      # against the registered client's redirect_uri on every /oauth2/authorize call).
+      OAUTH_REDIRECT_URI: ${DEMO_CLIENT_REDIRECT_URI:-http://localhost:3000/callback}
     ports:
       - "3000:3000"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
 volumes:
   mysql_data:

@@ -15,10 +15,13 @@
         </div>
 
         <div class="panel form-panel panel-padded">
+            <div class="error" th:if="${error}" th:text="${error}"></div>
             <div th:if="${mfaEnabled}">
                 <p>MFA je pro tvůj účet <strong>zapnuté</strong>.</p>
                 <form th:action="@{/account/mfa/disable}" method="post"
                       onsubmit="return confirm('Opravdu vypnout MFA? Ztratíš i stávající recovery kódy.');">
+                    <label for="code">Pro potvrzení zadej aktuální kód z aplikace (nebo recovery kód)</label>
+                    <input type="text" id="code" name="code" required autocomplete="one-time-code">
                     <button type="submit" class="button-danger">Vypnout MFA</button>
                 </form>
             </div>

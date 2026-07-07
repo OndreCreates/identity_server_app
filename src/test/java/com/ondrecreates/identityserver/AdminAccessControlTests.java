@@ -48,6 +48,8 @@ class AdminAccessControlTests extends AbstractIntegrationTest {
                 .andExpect(status().isOk());
         mockMvc.perform(get("/admin/users").session(session))
                 .andExpect(status().isOk());
+        mockMvc.perform(get("/admin/audit").session(session))
+                .andExpect(status().isOk());
     }
 
     @Test

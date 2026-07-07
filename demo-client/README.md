@@ -1,36 +1,39 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Demo client
 
-## Getting Started
+A minimal Next.js (App Router) app that exists to demonstrate the identity server's OAuth2
+authorization code flow live, end to end — nothing here is meant to be a production app in
+its own right. See the [root README](../README.md) for the full project writeup.
 
-First, run the development server:
+## What this demonstrates
+
+- Authorization code grant with mandatory PKCE (verifier/challenge generated server-side,
+  never exposed to the browser).
+- A **confidential** client: every OAuth call (`/login`, `/callback`, `/refresh`, `/logout`)
+  happens in a Next.js route handler, server-side, so the client secret never reaches the
+  browser. Token/refresh-token cookies are `httpOnly`.
+- ID token verification against the identity server's JWKS (`lib/verifyIdToken.ts`), checking
+  both `issuer` and `audience`.
+- Refresh token rotation: `/refresh` exchanges the current refresh token for a new
+  access+refresh pair (the identity server invalidates the old one on every use).
+- CSRF protection on the callback via the `state` parameter, checked against a value stored
+  in a short-lived cookie before the authorization code is ever exchanged.
+
+## Running it
+
+This app needs a running identity server (see the root README for `docker compose up`, or
+run it separately with `mvn spring-boot:run` from the project root).
 
 ```bash
+cp .env.example .env.local
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open **http://localhost:3000**.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See `.env.example` for the full list and what each one is for. The one non-obvious one:
+`IDENTITY_SERVER_INTERNAL_URL` is only needed when this app can't reach the identity server
+at the same address the browser uses (e.g. in Docker Compose) — see the root README's
+"Notable design decisions" section for why that split exists.

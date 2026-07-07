@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="cs" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Audit log – Admin</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+    <div th:replace="~{admin/fragments/topbar :: topbar(active='audit')}"></div>
+
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>Audit log</h1>
+        </div>
+
+        <p class="hint">Posledních <span th:text="${#lists.size(entries)}"></span> záznamů (nejnovější první).</p>
+
+        <div class="panel table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Kdy</th>
+                        <th>Událost</th>
+                        <th>Email</th>
+                        <th>IP adresa</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="entry : ${entries}">
+                        <td th:text="${#temporals.format(entry.createdAt, 'd.M.yyyy HH:mm:ss')}"></td>
+                        <td>
+                            <span class="tag" th:classappend="${entry.eventType.name().endsWith('FAILURE')} ? ' tag-danger' : ' tag-success'"
+                                  th:text="${entry.eventType}"></span>
+                        </td>
+                        <td th:text="${entry.email}"></td>
+                        <td th:text="${entry.ipAddress}"></td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(entries)}">
+                        <td colspan="4">Zatím žádné záznamy.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

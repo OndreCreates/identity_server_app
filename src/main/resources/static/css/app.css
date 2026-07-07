@@ -265,6 +265,16 @@ tr:last-child td {
     margin: 2px 4px 2px 0;
 }
 
+.tag-success {
+    background: rgba(52, 199, 89, 0.15);
+    color: #7bd88f;
+}
+
+.tag-danger {
+    background: rgba(255, 69, 58, 0.15);
+    color: #ff8a80;
+}
+
 .row-actions {
     display: flex;
     gap: 8px;

@@ -1,5 +1,9 @@
 package com.ondrecreates.identityserver.mfa;
 
+import com.ondrecreates.identityserver.audit.AuditEventType;
+import com.ondrecreates.identityserver.audit.AuditLog;
+import com.ondrecreates.identityserver.audit.AuditLogRepository;
+import com.ondrecreates.identityserver.audit.LockoutPolicy;
 import com.ondrecreates.identityserver.user.AppUser;
 import com.ondrecreates.identityserver.user.AppUserRepository;
 import jakarta.servlet.http.HttpSession;
@@ -11,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.security.Principal;
+import java.time.Instant;
 import java.util.List;
 
 @Controller
@@ -21,10 +26,13 @@ public class MfaController {
 
     private final AppUserRepository appUserRepository;
     private final MfaService mfaService;
+    private final AuditLogRepository auditLogRepository;
 
-    public MfaController(AppUserRepository appUserRepository, MfaService mfaService) {
+    public MfaController(AppUserRepository appUserRepository, MfaService mfaService,
+                          AuditLogRepository auditLogRepository) {
         this.appUserRepository = appUserRepository;
         this.mfaService = mfaService;
+        this.auditLogRepository = auditLogRepository;
     }
 
     @GetMapping
@@ -71,9 +79,30 @@ public class MfaController {
         return "mfa/recovery-codes";
     }
 
+    // Requires the current TOTP or a recovery code, not just an authenticated session --
+    // otherwise a hijacked session that only has the password factor (before completing the
+    // /login/mfa challenge) could permanently strip MFA off the account. Checked against the
+    // same LockoutPolicy as the /login/mfa challenge itself (and recorded the same way) so
+    // this form can't be used as an unthrottled side door around that lockout.
     @PostMapping("/disable")
-    public String disable(Principal principal) {
+    public String disable(@RequestParam String code, Principal principal, Model model) {
         AppUser user = currentUser(principal);
+
+        long recentFailures = auditLogRepository.countByUserIdAndEventTypeAndCreatedAtAfter(
+                user.getId(), AuditEventType.MFA_FAILURE, Instant.now().minus(LockoutPolicy.WINDOW));
+        if (recentFailures >= LockoutPolicy.MAX_ATTEMPTS) {
+            model.addAttribute("mfaEnabled", true);
+            model.addAttribute("error", "Příliš mnoho neplatných pokusů, zkus to znovu později.");
+            return "mfa/status";
+        }
+
+        if (!mfaService.verifyLoginCode(user.getId(), code)) {
+            auditLogRepository.save(new AuditLog(user.getId(), user.getEmail(), AuditEventType.MFA_FAILURE, null));
+            model.addAttribute("mfaEnabled", true);
+            model.addAttribute("error", "Kód nesouhlasí, MFA zůstává zapnuté.");
+            return "mfa/status";
+        }
+
         mfaService.disable(user.getId());
         return "redirect:/account/mfa";
     }

@@ -14,6 +14,8 @@
             <a th:href="@{/admin/clients/new}" class="button">+ Nový klient</a>
         </div>
 
+        <div class="error" th:if="${error}" th:text="${error}"></div>
+
         <div class="panel table-scroll">
             <table>
                 <thead>
