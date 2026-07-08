@@ -25,5 +25,11 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 EXPOSE 3000
-ENV PORT=3000
+# Docker sets HOSTNAME to the container ID for every container, and Next's standalone
+# server binds to it if set -- resolving to this container's specific bridge IP instead of
+# all interfaces. That leaves the app unreachable via localhost from inside its own
+# container (breaking the healthcheck) even though it's reachable from outside via the
+# published port. Forcing HOSTNAME here makes it bind on every interface instead.
+ENV PORT=3000 \
+    HOSTNAME=0.0.0.0
 CMD ["node", "server.js"]

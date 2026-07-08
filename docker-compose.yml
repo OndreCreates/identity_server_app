@@ -70,7 +70,11 @@ services:
     ports:
       - "3000:3000"
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/"]
+      # 127.0.0.1, not "localhost" -- wget resolves "localhost" to ::1 first on this image,
+      # but the Next standalone server (bound via HOSTNAME=0.0.0.0 above) only listens on
+      # IPv4, so the healthcheck would fail with "connection refused" despite the app
+      # actually working (reachable fine from outside the container the whole time).
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000/"]
       interval: 5s
       timeout: 5s
       retries: 20
