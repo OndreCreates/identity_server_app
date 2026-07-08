@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
+import { publicOrigin } from "@/lib/config";
 import { revokeToken } from "@/lib/oidcClient";
 import { clearSession, getSession } from "@/lib/session";
 
-export async function GET(request: Request) {
+export async function GET() {
     const session = await getSession();
 
     if (session) {
@@ -18,5 +19,5 @@ export async function GET(request: Request) {
     }
 
     await clearSession();
-    return NextResponse.redirect(new URL("/", request.url));
+    return NextResponse.redirect(new URL("/", publicOrigin));
 }

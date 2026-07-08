@@ -20,3 +20,12 @@ export const oidcConfig = {
     clientSecret: requireEnv("OAUTH_CLIENT_SECRET"),
     redirectUri: requireEnv("OAUTH_REDIRECT_URI"),
 } as const;
+
+// This app's own public address, derived from redirectUri rather than the incoming
+// request's Host header. Next's standalone server (no reverse proxy trust configured)
+// builds `request.url` from process.env.HOSTNAME, not the client's actual Host header --
+// in Docker that's the container's own auto-assigned hostname, which no browser outside
+// the container can resolve. Same-origin redirects (post-login, post-refresh, post-logout)
+// use this instead of `new URL(path, request.url)` so they always land on an address the
+// user's browser can actually reach.
+export const publicOrigin = new URL(oidcConfig.redirectUri).origin;

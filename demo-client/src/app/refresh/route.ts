@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { publicOrigin } from "@/lib/config";
 import { refreshAccessToken, toSession } from "@/lib/oidcClient";
 import { clearSession, getSession, storeSession } from "@/lib/session";
 
@@ -13,17 +14,17 @@ export async function GET(request: NextRequest) {
     const session = await getSession();
 
     if (!session) {
-        return NextResponse.redirect(new URL("/", request.url));
+        return NextResponse.redirect(new URL("/", publicOrigin));
     }
 
     try {
         const tokens = await refreshAccessToken(session.refreshToken);
         await storeSession(toSession(tokens, session.refreshToken));
 
-        return NextResponse.redirect(new URL(next, request.url));
+        return NextResponse.redirect(new URL(next, publicOrigin));
     } catch (cause) {
         await clearSession();
-        const url = new URL("/", request.url);
+        const url = new URL("/", publicOrigin);
         url.searchParams.set(
             "error",
             `Refresh token už neplatí, přihlas se prosím znovu (${(cause as Error).message}).`,

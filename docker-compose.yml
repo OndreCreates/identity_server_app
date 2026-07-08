@@ -70,11 +70,14 @@ services:
     ports:
       - "3000:3000"
     healthcheck:
-      # 127.0.0.1, not "localhost" -- wget resolves "localhost" to ::1 first on this image,
-      # but the Next standalone server (bound via HOSTNAME=0.0.0.0 above) only listens on
-      # IPv4, so the healthcheck would fail with "connection refused" despite the app
-      # actually working (reachable fine from outside the container the whole time).
-      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000/"]
+      # $(hostname), not $HOSTNAME -- the env var isn't reliably inherited by Docker's
+      # healthcheck exec context even though it's set for the container's main process; the
+      # `hostname` command reads the kernel hostname directly instead. That hostname is
+      # exactly the address Next's standalone server binds to by default (Docker sets it to
+      # the container ID, and /etc/hosts already maps it to this container's own bridge IP).
+      # Deliberately not "localhost" or a forced 0.0.0.0 bind: see the Dockerfile for why
+      # overriding HOSTNAME breaks the app's own same-origin redirect URLs.
+      test: ["CMD-SHELL", "wget --spider -q http://$(hostname):3000/"]
       interval: 5s
       timeout: 5s
       retries: 20

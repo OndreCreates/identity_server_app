@@ -14,6 +14,75 @@ own, unmodified. What's custom is everything around it: the login/admin UI, the 
 MFA data model, the audit trail, and the second-factor enforcement wired into Spring
 Security 7.1's new multi-factor authentication mechanism.
 
+## Screenshots
+
+<table>
+<tr>
+<td width="50%">
+
+**Login**<br>
+Custom login page (Thymeleaf), not a Spring Authorization Server default template.
+
+<img src="docs/screenshots/login.png" alt="Login page">
+
+</td>
+<td width="50%">
+
+**Two-factor challenge (TOTP)**<br>
+Only shown to users who enrolled in MFA themselves (see the Features section below).
+
+<img src="docs/screenshots/mfa-challenge.png" alt="MFA challenge">
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**Admin — OAuth clients**<br>
+CRUD over `oauth2_registered_client`, gated to `ROLE_ADMIN`.
+
+<img src="docs/screenshots/admin-clients.png" alt="Admin panel with OAuth clients">
+
+</td>
+<td width="50%">
+
+**Admin — users**<br>
+With self-lockout guards (an admin can't remove their own role or delete themselves).
+
+<img src="docs/screenshots/admin-users.png" alt="Admin panel with the user list">
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**Admin — audit log**<br>
+A live source of truth for the lockout mechanism, not just a passive record.
+
+<img src="docs/screenshots/admin-audit.png" alt="Admin panel with the audit log">
+
+</td>
+<td width="50%">
+
+**Demo client — home page**<br>
+The Next.js app that drives and demonstrates the whole OAuth flow live.
+
+<img src="docs/screenshots/demo-home.png" alt="Demo client home page">
+
+</td>
+</tr>
+<tr>
+<td colspan="2">
+
+**Demo client — profile after login**<br>
+ID token verified via JWKS (issuer, audience, scope, expiry), not just "you're logged in".
+
+<img src="docs/screenshots/demo-profile.png" alt="Demo client profile page after a successful login">
+
+</td>
+</tr>
+</table>
+
 ## Architecture
 
 ```

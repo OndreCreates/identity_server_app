@@ -25,11 +25,14 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 EXPOSE 3000
-# Docker sets HOSTNAME to the container ID for every container, and Next's standalone
-# server binds to it if set -- resolving to this container's specific bridge IP instead of
-# all interfaces. That leaves the app unreachable via localhost from inside its own
-# container (breaking the healthcheck) even though it's reachable from outside via the
-# published port. Forcing HOSTNAME here makes it bind on every interface instead.
-ENV PORT=3000 \
-    HOSTNAME=0.0.0.0
+# Deliberately NOT setting HOSTNAME here. Next's standalone server binds to
+# process.env.HOSTNAME when present -- Docker auto-injects it as the container ID for every
+# container, resolving via /etc/hosts to this container's own bridge IP, which is why the
+# healthcheck below targets that same hostname rather than "localhost". Overriding it to
+# 0.0.0.0 looked like a fix (it does make the port reachable via loopback) but Next also
+# uses this value to build the absolute URLs behind `request.url` in route handlers when no
+# reverse proxy is trusted -- doing that turns every same-origin redirect (e.g. the one
+# after a successful login) into "http://0.0.0.0:3000/...", which most browsers happen to
+# still resolve but isn't a real, correct address.
+ENV PORT=3000
 CMD ["node", "server.js"]

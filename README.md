@@ -14,6 +14,75 @@ neupravované. Vlastní je všechno kolem: login/admin UI, datový model uživat
 audit log a vynucování druhého faktoru napojené na nový multi-factor mechanismus Spring
 Security 7.1.
 
+## Screenshoty
+
+<table>
+<tr>
+<td width="50%">
+
+**Přihlášení**<br>
+Vlastní login stránka (Thymeleaf), ne šablona ze Spring Authorization Serveru.
+
+<img src="docs/screenshots/login.png" alt="Přihlašovací stránka">
+
+</td>
+<td width="50%">
+
+**Dvoufázové ověření (TOTP)**<br>
+Zobrazí se jen uživatelům, kteří si MFA sami zapnuli (viz sekce Funkce níže).
+
+<img src="docs/screenshots/mfa-challenge.png" alt="MFA výzva">
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**Admin — OAuth klienti**<br>
+CRUD nad `oauth2_registered_client`, omezeno na `ROLE_ADMIN`.
+
+<img src="docs/screenshots/admin-clients.png" alt="Admin panel s OAuth klienty">
+
+</td>
+<td width="50%">
+
+**Admin — uživatelé**<br>
+Se self-lockout pojistkami (admin se nemůže sám odebrat z role/smazat).
+
+<img src="docs/screenshots/admin-users.png" alt="Admin panel se seznamem uživatelů">
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**Admin — audit log**<br>
+Živý zdroj pravdy pro lockout mechanismus, ne jen pasivní záznam.
+
+<img src="docs/screenshots/admin-audit.png" alt="Admin panel s audit logem">
+
+</td>
+<td width="50%">
+
+**Demo klient — úvodní stránka**<br>
+Next.js aplikace, co celý OAuth flow spouští a naživo předvádí.
+
+<img src="docs/screenshots/demo-home.png" alt="Úvodní stránka demo klienta">
+
+</td>
+</tr>
+<tr>
+<td colspan="2">
+
+**Demo klient — profil po přihlášení**<br>
+ID token ověřený přes JWKS (issuer, audience, scope, platnost), místo pouhého "jsi přihlášený".
+
+<img src="docs/screenshots/demo-profile.png" alt="Profilová stránka demo klienta po úspěšném přihlášení">
+
+</td>
+</tr>
+</table>
+
 ## Architektura
 
 ```

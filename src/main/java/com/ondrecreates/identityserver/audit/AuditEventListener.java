@@ -6,6 +6,7 @@ import com.ondrecreates.identityserver.user.AppUser;
 import com.ondrecreates.identityserver.user.AppUserRepository;
 import org.springframework.context.event.EventListener;
 import org.springframework.security.authentication.ProviderNotFoundException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.event.AbstractAuthenticationFailureEvent;
 import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
 import org.springframework.security.core.Authentication;
@@ -44,6 +45,16 @@ public class AuditEventListener {
     @EventListener
     public void onSuccess(AuthenticationSuccessEvent event) {
         Authentication authentication = event.getAuthentication();
+        // The success handler's merged result keeps the primary authentication's concrete
+        // type (see TotpAuthenticationProvider), so both the password-only and the
+        // TOTP-completed case surface here as UsernamePasswordAuthenticationToken. Anything
+        // else -- notably OAuth2ClientAuthenticationToken, published when demo-client itself
+        // authenticates to /oauth2/token with its client secret -- isn't a user login and
+        // would otherwise show up in the audit log looking like one (with the client_id as
+        // the "email").
+        if (!(authentication instanceof UsernamePasswordAuthenticationToken)) {
+            return;
+        }
         AuditEventType eventType = MfaAuthorities.hasFactor(authentication, MfaAuthorities.TOTP_FACTOR)
                 ? AuditEventType.MFA_SUCCESS
                 : AuditEventType.LOGIN_SUCCESS;
@@ -56,6 +67,9 @@ public class AuditEventListener {
             return;
         }
         Authentication authentication = event.getAuthentication();
+        if (!(authentication instanceof UsernamePasswordAuthenticationToken || authentication instanceof TotpAuthenticationToken)) {
+            return;
+        }
         AuditEventType eventType = authentication instanceof TotpAuthenticationToken
                 ? AuditEventType.MFA_FAILURE
                 : AuditEventType.LOGIN_FAILURE;
