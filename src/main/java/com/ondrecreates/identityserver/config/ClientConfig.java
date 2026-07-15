@@ -31,6 +31,7 @@ import java.util.UUID;
 public class ClientConfig {
 
     private static final String DEMO_CLIENT_ID = "demo-client";
+    private static final String INCIDENT_ADMIN_CLIENT_ID = "incident-admin-panel";
 
     @Bean
     public RegisteredClientRepository registeredClientRepository(JdbcTemplate jdbcTemplate) {
@@ -66,39 +67,57 @@ public class ClientConfig {
                                                PasswordEncoder passwordEncoder,
                                                @Value("${app.demo-client.secret}") String demoClientSecret,
                                                @Value("${app.demo-client.redirect-uri}") String demoClientRedirectUri) {
-        return args -> {
-            RegisteredClient existing = registeredClientRepository.findByClientId(DEMO_CLIENT_ID);
-            String id = existing != null ? existing.getId() : UUID.randomUUID().toString();
+        return args -> upsertClient(registeredClientRepository, passwordEncoder, DEMO_CLIENT_ID,
+                demoClientSecret, demoClientRedirectUri);
+    }
 
-            // BCrypt is deliberately slow -- skip re-encoding (and the resulting no-op write)
-            // on every restart when the configured secret hasn't actually changed.
-            boolean secretUnchanged = existing != null
-                    && passwordEncoder.matches(demoClientSecret, existing.getClientSecret());
-            String clientSecret = secretUnchanged ? existing.getClientSecret() : passwordEncoder.encode(demoClientSecret);
+    /**
+     * Same client shape as demo-client (confidential, authorization_code + refresh_token,
+     * PKCE required) -- this is incident_management_app's Next.js admin panel, a separate
+     * portfolio project/service consuming this identity server, hence its own registered
+     * client rather than reusing demo-client's.
+     */
+    @Bean
+    public CommandLineRunner incidentAdminPanelSeeder(RegisteredClientRepository registeredClientRepository,
+                                                       PasswordEncoder passwordEncoder,
+                                                       @Value("${app.incident-admin-panel.secret}") String clientSecret,
+                                                       @Value("${app.incident-admin-panel.redirect-uri}") String redirectUri) {
+        return args -> upsertClient(registeredClientRepository, passwordEncoder, INCIDENT_ADMIN_CLIENT_ID,
+                clientSecret, redirectUri);
+    }
 
-            RegisteredClient demoClient = RegisteredClient.withId(id)
-                    .clientId(DEMO_CLIENT_ID)
-                    .clientSecret(clientSecret)
-                    .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-                    .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                    .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                    .redirectUri(demoClientRedirectUri)
-                    .scope(OidcScopes.OPENID)
-                    .scope(OidcScopes.PROFILE)
-                    .clientSettings(ClientSettings.builder()
-                            .requireProofKey(true)
-                            .requireAuthorizationConsent(false)
-                            .build())
-                    .tokenSettings(TokenSettings.builder()
-                            // Short-lived on purpose: makes refresh-on-expiry observable in a
-                            // manual demo without waiting around. Not a production value.
-                            .accessTokenTimeToLive(Duration.ofMinutes(1))
-                            .refreshTokenTimeToLive(Duration.ofMinutes(30))
-                            .reuseRefreshTokens(false)
-                            .build())
-                    .build();
+    private void upsertClient(RegisteredClientRepository registeredClientRepository, PasswordEncoder passwordEncoder,
+                               String clientId, String rawSecret, String redirectUri) {
+        RegisteredClient existing = registeredClientRepository.findByClientId(clientId);
+        String id = existing != null ? existing.getId() : UUID.randomUUID().toString();
 
-            registeredClientRepository.save(demoClient);
-        };
+        // BCrypt is deliberately slow -- skip re-encoding (and the resulting no-op write)
+        // on every restart when the configured secret hasn't actually changed.
+        boolean secretUnchanged = existing != null && passwordEncoder.matches(rawSecret, existing.getClientSecret());
+        String clientSecret = secretUnchanged ? existing.getClientSecret() : passwordEncoder.encode(rawSecret);
+
+        RegisteredClient client = RegisteredClient.withId(id)
+                .clientId(clientId)
+                .clientSecret(clientSecret)
+                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                .redirectUri(redirectUri)
+                .scope(OidcScopes.OPENID)
+                .scope(OidcScopes.PROFILE)
+                .clientSettings(ClientSettings.builder()
+                        .requireProofKey(true)
+                        .requireAuthorizationConsent(false)
+                        .build())
+                .tokenSettings(TokenSettings.builder()
+                        // Short-lived on purpose: makes refresh-on-expiry observable in a
+                        // manual demo without waiting around. Not a production value.
+                        .accessTokenTimeToLive(Duration.ofMinutes(1))
+                        .refreshTokenTimeToLive(Duration.ofMinutes(30))
+                        .reuseRefreshTokens(false)
+                        .build())
+                .build();
+
+        registeredClientRepository.save(client);
     }
 }

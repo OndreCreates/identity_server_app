@@ -194,12 +194,19 @@ ověřeno i s vypnutým docker-compose stackem.
   identity server dosáhnout přes interní síť Compose (`identity-server:9000`). Claim `iss`
   zapečený v každém tokenu zůstává vždy ta veřejná adresa, protože to je to, co je doopravdy
   podepsané v JWT bez ohledu na to, přes jakou URL byl token získán.
+- **JWT podpisový klíč je persistentní, zašifrovaný v DB vlastním klíčem** (`JWK_ENCRYPTION_KEY`,
+  oddělené od `MFA_ENCRYPTION_KEY` — kdyby jeden unikl, druhý pořád drží). AES-GCM logika
+  je jen jednou, jako obecná `AesGcmCipher` utilita, kterou používá jak tohle, tak šifrování
+  TOTP secretů — ne dvě kopie stejného šifrovacího kódu. Restart serveru teď nezneplatní
+  dosud vydané tokeny (ověřeno testem i živě: token vydaný před restartem kontejneru se
+  úspěšně ověří i po něm).
 
 ## Známá omezení (záměrná, ne přehlédnutá)
 
-- **JWT podpisový klíč se generuje v paměti při každém restartu.** Pro demo v pořádku;
-  reálné nasazení by potřebovalo persistentní (a rotovatelný) klíč, nebo KMS. Restart
-  serveru zneplatní všechny dosud vydané tokeny.
+- **JWT podpisový klíč zatím nerotuje.** Je persistentní (viz níže), ale pořád je to jeden
+  klíč napořád — žádný mechanismus na zavedení nového klíče při zachování ověřitelnosti
+  tokenů podepsaných tím starým. Pro demo v pořádku; reálné nasazení by chtělo rotaci nebo
+  KMS.
 - **Životnost access/refresh tokenů je krátká** (1 minuta / 30 minut) záměrně, aby šlo
   refresh-po-vypršení pozorovat v živém demu bez čekání — není to produkční hodnota.
 - **Nasazený admin účet a výchozí secrety** (`DEMO_CLIENT_SECRET`, `MFA_ENCRYPTION_KEY`)
@@ -211,5 +218,5 @@ ověřeno i s vypnutým docker-compose stackem.
 
 - Multi-tenant retrofit dalších projektů (např. Monitoring Dashboard appky) jako OAuth2
   klientů tohoto identity serveru — záměrně mimo scope MVP, ne blocker.
-- Persistentní/rotovatelný JWK podpisový klíč pro reálné nasazení.
+- Rotace JWK podpisového klíče (klíč samotný je už persistentní, viz výše).
 - WebAuthn/passkeys jako další MFA faktor vedle TOTP.

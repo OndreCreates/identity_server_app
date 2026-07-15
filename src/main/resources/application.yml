@@ -26,6 +26,16 @@ app:
   demo-client:
     secret: ${DEMO_CLIENT_SECRET:demo-client-dev-secret-change-me}
     redirect-uri: ${DEMO_CLIENT_REDIRECT_URI:http://localhost:3000/callback}
+  incident-admin-panel:
+    # Consumed by incident_management_app's Next.js admin panel (separate portfolio project,
+    # separate registered client -- see ClientConfig).
+    secret: ${INCIDENT_ADMIN_CLIENT_SECRET:incident-admin-dev-secret-change-me}
+    redirect-uri: ${INCIDENT_ADMIN_REDIRECT_URI:http://localhost:3001/callback}
   mfa:
     # Base64-encoded 256-bit AES key. Dev-only default -- generate a real one per environment.
     encryption-key: ${MFA_ENCRYPTION_KEY:clbLPsWb+rlRiazzQY/Sf50oVPAxu7Co3/JimoQEkQY=}
+  jwk:
+    # Encrypts the persisted JWT signing key at rest (JwkKeyService) -- deliberately a
+    # separate key from app.mfa.encryption-key, not shared, so one leaking doesn't also
+    # compromise the other.
+    encryption-key: ${JWK_ENCRYPTION_KEY:4m+/7jXHa03CVWIH9VSKlXzerznmaJ76sGOuPJtuoaw=}

@@ -197,12 +197,19 @@ verified to work with the docker-compose stack stopped.
   reach the identity server over Compose's internal network (`identity-server:9000`). The
   `iss` claim baked into every token always stays the public address, since that's what's
   actually signed into the JWT regardless of which URL fetched it.
+- **The JWT signing key is persisted, encrypted in the DB with its own key**
+  (`JWK_ENCRYPTION_KEY`, kept separate from `MFA_ENCRYPTION_KEY` — if one leaks, the other
+  still holds). The AES-GCM logic itself lives in exactly one place, a generic `AesGcmCipher`
+  utility shared with the TOTP secret encryption, not duplicated. Restarting the server no
+  longer invalidates previously-issued tokens (verified with a test and live: a token issued
+  before a container restart still verifies successfully after one).
 
 ## Known limitations (deliberate, not oversights)
 
-- **The JWT signing key is generated in memory on every restart.** Fine for a demo; a real
-  deployment would need a persisted (and rotatable) key, or a KMS. Restarting the server
-  invalidates every previously-issued token.
+- **The JWT signing key doesn't rotate yet.** It's persistent now (see above), but it's
+  still one key forever -- there's no mechanism to introduce a new key while previously
+  issued tokens signed with the old one remain verifiable. Fine for a demo; a real
+  deployment would want rotation, or a KMS.
 - **Access/refresh token lifetimes are short** (1 minute / 30 minutes) specifically so
   refresh-on-expiry is observable in a live demo without waiting around — not a production
   value.
@@ -215,5 +222,5 @@ verified to work with the docker-compose stack stopped.
 
 - Multi-tenant retrofit of other projects (e.g. a Monitoring Dashboard app) as OAuth2
   clients of this identity server — deliberately out of scope for the MVP, not a blocker.
-- Persistent/rotatable JWK signing key for real deployments.
+- JWK signing key rotation (the key itself is already persistent, see above).
 - WebAuthn/passkeys as an additional MFA factor alongside TOTP.

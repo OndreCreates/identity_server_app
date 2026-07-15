@@ -33,12 +33,15 @@ services:
       DB_USER: ${DB_USER:-identity_app}
       DB_PASSWORD: ${DB_PASSWORD:-changeme}
       DEMO_CLIENT_SECRET: ${DEMO_CLIENT_SECRET:-demo-client-dev-secret-change-me}
+      INCIDENT_ADMIN_CLIENT_SECRET: ${INCIDENT_ADMIN_CLIENT_SECRET:-incident-admin-dev-secret-change-me}
       MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY}
+      JWK_ENCRYPTION_KEY: ${JWK_ENCRYPTION_KEY}
       # Defaults match the host-published ports below -- correct for running this stack
       # locally. Override both (and the demo-client's matching values) for a real deployment
       # behind real domains.
       APP_ISSUER: ${APP_ISSUER:-http://localhost:9000}
       DEMO_CLIENT_REDIRECT_URI: ${DEMO_CLIENT_REDIRECT_URI:-http://localhost:3000/callback}
+      INCIDENT_ADMIN_REDIRECT_URI: ${INCIDENT_ADMIN_REDIRECT_URI:-http://localhost:3001/callback}
     ports:
       - "9000:9000"
     healthcheck:
